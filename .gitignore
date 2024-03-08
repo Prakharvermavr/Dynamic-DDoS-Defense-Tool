@@ -1,0 +1,15 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.pyc
+
+# Environment directories
+venv/
+env/
+ENV/
+
+# Dependency directories
+pip-wheel-metadata/
+
+# Miscellaneous
+*.log
+.DS_Store
