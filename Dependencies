@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Install Python 3.x (if not already installed)
+sudo apt-get update
+sudo apt-get install python3
+
+# Install required Python libraries
+sudo pip install scapy  # Optional for advanced packet manipulation
