@@ -1,16 +1,48 @@
-# This is a sample Python script.
+import socket
+import threading
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+HOST = '0.0.0.0'
+TCP_PORT = 8888
+UDP_PORT = 8889
+MAX_CONNECTIONS = 100
+MAX_REQUESTS_PER_CONNECTION = 100
+MAX_REQUESTS_PER_IP = 10
 
+request_count = {}
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+def handle_tcp_client(client_socket, client_address):
+    global request_count
+    client_ip = client_address[0]
+    if client_ip in request_count and request_count[client_ip] >= MAX_REQUESTS_PER_IP:
+        print(f"Blocked {client_ip} - Exceeded request limit")
+        client_socket.close()
+        return
 
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    if client_ip in request_count:
+        request_count[client_ip] += 1
+    else:
+        request_count[client_ip] = 1
+    for _ in range(MAX_REQUESTS_PER_CONNECTION):
+        request = client_socket.recv(1024)
+        if not request:
+            break
+    client_socket.close()
+def handle_udp():
+    udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    udp_socket.bind((HOST, UDP_PORT))
+    print(f"UDP server listening on {HOST}:{UDP_PORT}")
+    while True:
+        data, address = udp_socket.recvfrom(1024)
+def start_tcp_server():
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.bind((HOST, TCP_PORT))
+    tcp_socket.listen(MAX_CONNECTIONS)
+    print(f"TCP server listening on {HOST}:{TCP_PORT}")
+    while True:
+        client_socket, client_address = tcp_socket.accept()
+        print(f"Accepted TCP connection from {client_address[0]}:{client_address[1]}")
+        client_thread = threading.Thread(target=handle_tcp_client, args=(client_socket, client_address))
+        client_thread.start()
+tcp_thread = threading.Thread(target=start_tcp_server)
+tcp_thread.start()
+handle_udp()
